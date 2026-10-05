@@ -270,7 +270,7 @@ function renderModePanel() {
             <button type="button" data-act="join">加入</button>
           </div>
         </div>
-        <p class="muted">${S.conn === 'closed' && S.connMsg ? `<b class="r-loss">${esc(S.connMsg)}</b> ` : ''}联机需要通过 <code>npm start</code> 启动的服务器访问本页。同一局域网的朋友用服务器终端里显示的局域网地址打开即可；创建房间后把邀请链接发给对方。</p>
+        <p class="muted">${S.conn === 'closed' && S.connMsg ? `<b class="r-loss">${esc(S.connMsg)}</b> ` : ''}创建房间后把邀请链接发给朋友即可。联机需要服务器：部署到 Cloudflare 的网址可以直接用；本地运行 <code>npm start</code> 时，同一局域网的朋友用终端里显示的局域网地址打开。</p>
       </div>`;
     return;
   }

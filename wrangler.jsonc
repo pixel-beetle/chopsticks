@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chopsticks",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
+  "build": {
+    "command": "node scripts/build.mjs",
+    "watch_dir": ["public", "docs", "worker", "server"]
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  // 免费套餐只能用 SQLite 存储的 Durable Object
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "observability": { "enabled": true }
+}

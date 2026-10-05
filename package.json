@@ -9,8 +9,15 @@
   },
   "scripts": {
     "start": "node server/server.js",
+    "build": "node scripts/build.mjs",
+    "cf:dev": "wrangler dev",
+    "deploy": "wrangler deploy",
     "analyze": "node scripts/analyze.mjs",
     "lab": "node scripts/lab.mjs",
-    "test": "node scripts/selftest.mjs"
+    "test": "node scripts/selftest.mjs",
+    "test:online": "node scripts/online-test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.147.0"
   }
 }

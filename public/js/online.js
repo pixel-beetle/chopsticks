@@ -1,4 +1,5 @@
-// 联机客户端：创建或加入房间，订阅服务器推送的房间状态，提交走棋等操作。
+// 联机客户端：创建或加入房间，通过 WebSocket 接收服务器推送的房间状态，用 POST 提交走棋等操作。
+// 本地 npm start 的服务器和 Cloudflare Worker 使用同一套接口。
 import { store } from './ui.js';
 
 async function post(url, body) {
@@ -6,10 +7,16 @@ async function post(url, body) {
   try {
     res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   } catch {
-    throw new Error('连不上服务器。联机需要用 npm start 启动的服务器打开本页面。');
+    const e = new Error('连不上联机服务器。请通过 npm start 启动的地址或部署好的网址打开本页。');
+    e.status = 0;
+    throw e;
   }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
+  if (!res.ok) {
+    const e = new Error(data.error || `请求失败（${res.status}）`);
+    e.status = res.status;
+    throw e;
+  }
   return data;
 }
 
@@ -37,6 +44,8 @@ function saveToken(roomId, token) {
   store.set('tokens', all);
 }
 
+const PING_MS = 25000;
+
 export class OnlineClient {
   /**
    * @param {{ onRoom: (room: object) => void, onConnection: (state: 'online' | 'reconnecting' | 'closed', msg?: string) => void }} handlers
@@ -46,7 +55,9 @@ export class OnlineClient {
     this.roomId = null;
     this.token = null;
     this.seat = null;
-    this.es = null;
+    this.ws = null;
+    this.pingTimer = null;
+    this.retryTimer = null;
   }
 
   async create({ name, first, allowHints }) {
@@ -70,17 +81,47 @@ export class OnlineClient {
   }
 
   connect() {
-    this.es?.close();
-    const url = `/api/rooms/${encodeURIComponent(this.roomId)}/events?token=${encodeURIComponent(this.token ?? '')}`;
-    const es = new EventSource(url);
-    this.es = es;
-    es.addEventListener('room', (e) => this.handlers.onRoom(JSON.parse(e.data)));
-    es.onopen = () => this.handlers.onConnection('online');
-    es.onerror = () => {
-      if (es.readyState === EventSource.CLOSED) {
-        this.handlers.onConnection('closed', '房间不存在或已过期');
-      } else this.handlers.onConnection('reconnecting');
+    this.closeSocket();
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${proto}//${location.host}/api/rooms/${encodeURIComponent(this.roomId)}/ws?token=${encodeURIComponent(this.token ?? '')}`);
+    this.ws = ws;
+    ws.onopen = () => {
+      this.handlers.onConnection('online');
+      this.pingTimer = setInterval(() => ws.readyState === WebSocket.OPEN && ws.send('ping'), PING_MS);
     };
+    ws.onmessage = (e) => {
+      if (e.data === 'pong') return;
+      let msg;
+      try {
+        msg = JSON.parse(e.data);
+      } catch {
+        return;
+      }
+      if (msg.type === 'room') this.handlers.onRoom(msg.room);
+    };
+    ws.onclose = () => {
+      clearInterval(this.pingTimer);
+      if (this.ws !== ws) return;
+      this.ws = null;
+      this.handlers.onConnection('reconnecting');
+      this.retryTimer = setTimeout(() => this.rejoin(), 2000);
+    };
+  }
+
+  /** 断线后先确认房间还在、拿回座位，再重新连接。 */
+  async rejoin() {
+    const roomId = this.roomId;
+    if (!roomId) return;
+    try {
+      const r = await post(`/api/rooms/${encodeURIComponent(roomId)}/join`, savedToken(roomId));
+      if (this.roomId === roomId) this.attach(r);
+    } catch (e) {
+      if (this.roomId !== roomId) return;
+      if (e.status === 404) {
+        this.close();
+        this.handlers.onConnection('closed', e.message);
+      } else this.retryTimer = setTimeout(() => this.rejoin(), 4000);
+    }
   }
 
   act(type, payload = {}) {
@@ -99,9 +140,16 @@ export class OnlineClient {
     this.close();
   }
 
+  closeSocket() {
+    clearTimeout(this.retryTimer);
+    clearInterval(this.pingTimer);
+    const ws = this.ws;
+    this.ws = null;
+    ws?.close();
+  }
+
   close() {
-    this.es?.close();
-    this.es = null;
+    this.closeSocket();
     this.roomId = null;
     this.token = null;
     this.seat = null;

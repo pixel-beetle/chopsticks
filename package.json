@@ -1,0 +1,16 @@
+{
+  "name": "chopsticks-research",
+  "version": "1.0.0",
+  "description": "碰手指（凑十消手）游戏的研究、求解器与联机网页",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/server.js",
+    "analyze": "node scripts/analyze.mjs",
+    "lab": "node scripts/lab.mjs",
+    "test": "node scripts/selftest.mjs"
+  }
+}

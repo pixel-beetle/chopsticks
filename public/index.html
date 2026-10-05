@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>凑十碰手指 · 练习与联机</title>
+    <meta name="description" content="碰手指（凑十消手）游戏：人机练习、规则讲解、练习题与双人联机。" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f2933'/%3E%3Ctext x='32' y='45' font-size='38' text-anchor='middle' fill='%23f4a261' font-family='sans-serif' font-weight='700'%3E%E5%8D%81%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#play"><span class="logo">十</span><span>凑十碰手指</span></a>
+      <nav class="tabs">
+        <a href="#play" data-view="play">对弈</a>
+        <a href="#drill" data-view="drill">练习</a>
+        <a href="#ref" data-view="ref">速查</a>
+        <a href="#doc" data-view="doc">文章</a>
+      </nav>
+    </header>
+    <main>
+      <section id="view-play" class="view" hidden></section>
+      <section id="view-drill" class="view" hidden></section>
+      <section id="view-ref" class="view" hidden></section>
+      <section id="view-doc" class="view" hidden></section>
+    </main>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <noscript>这个页面需要启用 JavaScript。</noscript>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
